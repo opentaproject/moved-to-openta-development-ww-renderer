@@ -3,10 +3,14 @@ use Mojo::Base 'Mojolicious::Controller', -async_await;
 use Mojo::JSON qw(encode_json decode_json);
 use Crypt::JWT qw(encode_jwt decode_jwt);
 use MIME::Base64 qw(encode_base64);
+use Data::Dumper;
 use WeBWorK::Form;
 
 sub parseRequest {
   my $c = shift;
+  print STDERR "\nPARSE_REQUEST\n ";
+  #print  Dumper( $c ) ;
+  #print STDERR "\nDONE DUMPER";
   my %params = WeBWorK::Form->new_from_paramable($c->req)->Vars;
   if ($ENV{STRICT_JWT} && !( defined $params{problemJWT} || defined $params{sessionJWT} )) {
     $c->exception('Not allowed to request problems with raw data.', 403);
@@ -61,7 +65,7 @@ sub parseRequest {
     # override key-values in params with those provided in the JWT
     @params{ keys %$claims } = values %$claims;
   }
-  warn join(', ', keys %params);
+  #warn join(', ', keys %params);
   return \%params;
 }
 

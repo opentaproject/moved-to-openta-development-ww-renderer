@@ -18,6 +18,7 @@ our $regex = {
   allPaths => qr/^(:?private\/|Contrib\/|webwork-open-problem-library\/Contrib\/|Library\/|webwork-open-problem-library\/OpenProblemLibrary\/)(?!\.\.\/)/,
   publicOnly => qr/^(:?Contrib\/|webwork-open-problem-library\/Contrib\/|Library\/|webwork-open-problem-library\/OpenProblemLibrary\/)(?!\.\.\/)/,
   privateOnly => qr/^private\/(?!\.\.\/)/,
+  all => '.*',
 };
 
 sub raw {
@@ -27,7 +28,7 @@ sub raw {
       {
         field     => 'sourceFilePath',
         checkType => 'like',
-        check     => $regex->{allPathsPg},
+        check     => $regex->{all},
       };
     my $validatedInput = $c->validateRequest( { required => $required } );
     return unless $validatedInput;
@@ -49,7 +50,7 @@ async sub writer {
       {
         field     => 'writeFilePath',
         checkType => 'like',
-        check     => $regex->{privateOnlyPg},
+        check     => $regex->{all},
       };
     push @$required,
       {

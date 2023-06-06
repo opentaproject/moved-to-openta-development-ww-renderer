@@ -64,6 +64,8 @@ $problemPostHeaderText
           <input type="hidden" name="sourceFilePath" value = "$sourceFilePath">
           <input type="hidden" name="problemSource" value="$encoded_source">
           <input type="hidden" name="problemSeed" value = "$problemSeed">
+	  <input type="hidden" name="identifier" value = "$identifier">
+	  <input type="hidden" name="studentAssetPath" value = "$studentAssetPath">
           <input type="hidden" name="language" value="$formLanguage">
           <input type="hidden" name="showSummary" value="$showSummary">
           <p>

@@ -90,7 +90,7 @@ sub process_pg_file {
     $inputHash->{displayMode} =
       'MathJax';    #	is there any reason for this to be anything else?
     $inputHash->{sourceFilePath} ||= $file_path;
-    $inputHash->{outputFormat}   ||= 'static';
+    $inputHash->{outputFormat}   ||=  $ENV{DEFAULT_OUTPUT_FORMAT} ||= 'simple';
     $inputHash->{language}       ||= 'en';
 
     # HACK: required for problemRandomize.pl
@@ -169,7 +169,9 @@ sub process_problem {
     #	$inputs_ref->{showResourceInfo}	= 1; #$print_resource_hash;
 
     ### stash inputs that get wiped by PG
-    my $problem_seed = $inputs_ref->{problemSeed};
+    my $problem_seed = $inputs_ref->{problemSeed} || '';
+    my $identifier = $inputs_ref->{identifier} || 'process_problem';
+    my $studentAssetPath = $inputs_ref->{studentAssetPath} || 'from RenderProblem';
     die "problem seed not defined in Controller::RenderProblem::process_problem"
       unless $problem_seed;
     my $display_mode = $inputs_ref->{displayMode};
@@ -289,6 +291,8 @@ sub process_problem {
       return_object   => $return_object,
       encoded_source  => '', #encode_base64($source),
       sourceFilePath  => $file_path,
+      problemSeed     => $inputs_ref->{problemSeed},
+      identifier      => $inputs_ref->{identifier},
       url             => $inputs_ref->{baseURL},
       form_action_url => $inputs_ref->{formURL},
       maketext        => sub {return @_},
@@ -297,6 +301,7 @@ sub process_problem {
       course_password => 'daemon',
       inputs_ref      => $inputs_ref,
       ce              => $ce,
+      studentAssetPath => $studentAssetPath,
     );
 
     ##################################################
@@ -346,6 +351,7 @@ sub standaloneRenderer {
     my $problemNumber    = $inputs_ref->{problemNumber} // 1;          # ever even relevant?
     my $displayMode      = $inputs_ref->{displayMode} || 'MathJax';    # $ce->{pg}->{options}->{displayMode};
     my $problem_seed     = $inputs_ref->{problemSeed} || 1234;
+    my $identifier 	 = $inputs_ref->{identifier} || 'standaloneRenderer' ;
     my $permission_level = $inputs_ref->{permissionLevel} || 0;        # permissionLevel >= 10 will show hints, solutions + open all scaffold
     my $num_correct      = $inputs_ref->{numCorrect} || 0;             # consider replacing - this may never be relevant...
     my $num_incorrect    = $inputs_ref->{numIncorrect} // 1000;        # default to exceed any problem's showHint threshold unless provided

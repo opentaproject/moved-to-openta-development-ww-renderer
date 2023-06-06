@@ -63,6 +63,7 @@ $LTIGradeMessage
 		<input type="hidden" name="problemSourceURL" value = "$problemSourceURL">
 	       <input type="hidden" name="problemSource" value="$encoded_source">
 	       <input type="hidden" name="problemSeed" value="$problemSeed">
+	       <input type="hidden" name="identifier" value = "$identifier">
 	       <input type="hidden" name="problemUUID" value="$problemUUID">
 	       <input type="hidden" name="psvn" value="$psvn">
 	       <input type="hidden" name="pathToProblemFile" value="$fileName">

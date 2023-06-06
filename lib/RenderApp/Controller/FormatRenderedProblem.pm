@@ -25,13 +25,19 @@ FormatRenderedProblem.pm
 package RenderApp::Controller::FormatRenderedProblem;
 
 use lib "$WeBWorK::Constants::WEBWORK_DIRECTORY/lib";
+use JSON;
 use lib "$WeBWorK::Constants::PG_DIRECTORY/lib";
 use MIME::Base64 qw( encode_base64 decode_base64);
 use WeBWorK::Utils::AttemptsTable; #import from ww2
 use WeBWorK::PG::ImageGenerator; # import from ww2
 use WeBWorK::Utils::LanguageAndDirection;
+use File::Path qw(make_path remove_tree);
+use File::Copy ;
 use WeBWorK::Utils qw( wwRound);   # required for score summary
 use WeBWorK::Localize ; # for maketext
+use Data::Dumper;
+use HTTP::Request ();
+use LWP::UserAgent;
 our $UNIT_TESTS_ON  = 0;
 
 #####################
@@ -84,11 +90,12 @@ sub url {
 }
 
 sub formatRenderedProblem {
+	print STDERR "\nFORMAT_RENDERED_PROBLEM\n";
 	my $self 			  = shift;
 	my $problemText       ='';
 	my $rh_result         = $self->return_object() || {};  # wrap problem in formats
 	$problemText          = "No output from rendered Problem" unless $rh_result;
-	print "\nformatRenderedProblem return_object $rh_result = ",join(" ", sort keys %$rh_result),"\n" if $UNIT_TESTS_ON;
+	#print "\nformatRenderedProblem return_object $rh_result = ",join(" ", sort keys %$rh_result),"\n" if $UNIT_TESTS_ON;
 	if (ref($rh_result) and $rh_result->{text} ) {  ##text vs body_text
 		$problemText       =  $rh_result->{text};
 		$problemText      .= $rh_result->{flags}{comment} if ( $rh_result->{flags}{comment} && $self->{inputs_ref}{showComments} );
@@ -102,11 +109,58 @@ sub formatRenderedProblem {
 	my $answerOrder           = $rh_result->{flags}->{ANSWER_ENTRY_ORDER}; #[sort keys %{ $rh_result->{answers} }];
 	my $encoded_source        = $self->encoded_source//'';
 	my $sourceFilePath        = $self->{sourceFilePath}//'';
+	my $problemSeed  	  = $self->{problemSeed} ;
+	my $identifier		  = $self->{identifier} || 'formatrenderedproblem';
 	my $problemSourceURL      = $self->{inputs_ref}->{problemSourceURL};
 	my $warnings              = '';
+	my $studentAssetPath    = $self->{studentAssetPath};
+	my $score = $rh_result->{problem_result}->{score};
+	#my $decoded_identifier =  decode_base64( $identifier );
+	####  MAKE SURE SEED PASSED IS THE SAME AS PASSED BY BACKEND
+	#my @sp = split(/:/,$decoded_identifier);
+	#my $seed_check = $sp[-1];
+	#if (  $seed_check != $problemSeed ) {
+	#	print( "SEED CHECK NOT EQUAL $seed_check $problemSeed \n");
+	#} 
+	########
+	#@openta_result = ()
+	my $submitted  = defined( $self->{inputs_ref}{submitAnswers} )      || 0;
+	@openta_result = ();
+	while((my $key, my $value) = each (%{$rh_answers})){
+		#print "key : $key -> value : $value\n";
+		#print "ANS = $rh_answers->{$key}->{original_student_ans} \n";
+		#print "CORRECT = $rh_answers->{$key}->{score} \n";
+		#print "MSG = $rh_answers->{$key}->{ans_message} \n";
+		#print "SEED = $problemSeed \n";
+		my $ans =  $rh_answers->{$key}->{original_student_ans} ;
+		my $correct =  $rh_answers->{$key}->{score};
+		my $msg =  $rh_answers->{$key}->{ans_message};
+		my $seed = $problemSeed;
+		my %ndata = ('key' =>  $key , 'ans' =>  $ans, 'correct' =>  $correct, 'message'  =>  $msg, 'seed' => $seed ,'submitted' => $submitted ,'score' => $score );
+		#print "\nDATA = \n";
+		#print Dumper(%ndata);
+		#print "\nDATA DONE \n";
+		push( @openta_result ,  JSON->new->canonical(1)->encode( \%ndata ) );
+		#push( @openta_result ,  %ndata );
+	}
+	my $json_string = JSON->new->canonical(1)->encode( \@openta_result);
+	print "\nJSON_STRING = $json_string \n";
+	my $url = 'http://canary.localhost:8000/webwork/'.$identifier;
+	my $header = ['Content-Type' => 'application/json; charset=UTF-8'];
+	my $encoded_data = $json_string;
+	my $r = HTTP::Request->new('POST', $url  , $header, $encoded_data);
+	my $ua = LWP::UserAgent->new();
+	my $res = $ua->request($r);
+	my $post_json_data =  $res->decoded_content ;
+	#my  $post_data = JSON->new->canonical(1)->decode( $post_json_data );
+	#print Dumper( $post_data->{messages}  );
+	#print "DUMP OPENTARESULT\n";
+	#print Dumper( @openta_result );
+	#print "\nDUMP DONE\n";
 	print "\n return_object answers ",
 		join( " ", %{ $rh_result->{PG_ANSWERS_HASH} } )
 		if $UNIT_TESTS_ON;
+
 
 
 	#################################################
@@ -126,7 +180,7 @@ sub formatRenderedProblem {
 	#################################################
 
 	my $debug_messages = $rh_result->{debug_messages} || [];
-    $debug_messages = join("<br/>\n", @{  $debug_messages });
+    	$debug_messages = join("<br/>\n", @{  $debug_messages });
 
 	#################################################
 	# PG warning messages generated with WARN_message();
@@ -178,6 +232,13 @@ sub formatRenderedProblem {
 	my $problemIdentifierPrefix =
 		$self->{inputs_ref}->{problemIdentifierPrefix} // '';
 	my $problemResult = $rh_result->{problem_result} // '';
+	#print "PROBLEM RESULT\n ";
+	#my $score = $problemResult->{'score'} // '' ;
+	#my $msg   =$problemResult->{msg} // '' ;
+	#print "SCORE $score\n";
+	#print "MSG $msg\n";
+
+	# print Dumper($problemResult);
 	my $problemState  = $rh_result->{problem_state}  // '';
 	my $showPartialCorrectAnswers = $self->{inputs_ref}{showPartialCorrectAnswers}
 		// $rh_result->{flags}{showPartialCorrectAnswers};
@@ -193,7 +254,7 @@ sub formatRenderedProblem {
 	my %PROBLEM_LANG_AND_DIR = get_problem_lang_and_dir($rh_result->{flags}, "auto:en:ltr", $formLanguage);
 	my $PROBLEM_LANG_AND_DIR = join(" ", map { qq{$_="$PROBLEM_LANG_AND_DIR{$_}"} } keys %PROBLEM_LANG_AND_DIR);
 	my $mt = WeBWorK::Localize::getLangHandle($self->{inputs_ref}{language} // 'en');
-
+	
 	my $tbl = WeBWorK::Utils::AttemptsTable->new(
 		$rh_answers,
 		answersSubmitted       => $self->{inputs_ref}{answersSubmitted}//0,
@@ -209,7 +270,8 @@ sub formatRenderedProblem {
 		showMessages           => ($previewMode or $submitMode or $showCorrectMode),
 		showSummary            => ( ($showSummary and ($submitMode or $showCorrectMode) )//0 )?1:0,
 		maketext               => WeBWorK::Localize::getLoc($formLanguage//'en'),
-		summary                => $problemResult->{summary} //'', # can be set by problem grader???
+		summary                => $problemResult->{summary}  //'', # can be set by problem grader???
+		identifier  	       => $identifier || 'identifier-FormatRenderProblem',
 	);
 
 	my $answerTemplate = $tbl->answerTemplate;
@@ -294,7 +356,15 @@ sub formatRenderedProblem {
 	my $template = do("WebworkClient/${format_name}_format.pl")//'';
 	die "Unknown format name $format_name" unless $template;
 	# interpolate values into template
+	my $studentAssetFile = $studentAssetPath."/index\.html";
+	print "STUDENT_ASSET_FILE  = $studentAssetFile \n" ;
 	$template =~ s/(\$\w+)/"defined $1 ? $1 : ''"/gee;
+	@created = make_path( $studentAssetPath,  { chmod => 0777, });
+	my $studentAssetFile = $studentAssetPath + "/" + "index.html";
+	open(FH, '>', '/tmp/index.html' ) or die $!; # THIS DID NOT WORK BY WRITING DIRECTLY INTO FILE
+	print FH $template;
+	close( FH );
+	move( '/tmp/index.html', $studentAssetPath );
 	return $template;
 }
 
