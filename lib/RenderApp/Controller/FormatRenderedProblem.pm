@@ -106,7 +106,6 @@ sub formatRenderedProblem {
 	my $problemSeed  	  = $self->{problemSeed} ;
 	my $problemSourceURL      = $self->{inputs_ref}->{problemSourceURL};
 	my $warnings              = '';
-	print STDERR "\nPROBLEM_TXT $problemText \n";
 	$problemText .= "\<div> debug: seed = $problemSeed </div>  \n";
 	print "\n return_object answers ",
 		join( " ", %{ $rh_result->{PG_ANSWERS_HASH} } )
@@ -130,7 +129,7 @@ sub formatRenderedProblem {
 	#################################################
 
 	my $debug_messages = $rh_result->{debug_messages} || [];
-    $debug_messages = join("<br/>\n", @{  $debug_messages });
+    	$debug_messages = join("<br/>\n", @{  $debug_messages });
 
 	#################################################
 	# PG warning messages generated with WARN_message();

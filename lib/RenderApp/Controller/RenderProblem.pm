@@ -90,7 +90,7 @@ sub process_pg_file {
     $inputHash->{displayMode} =
       'MathJax';    #	is there any reason for this to be anything else?
     $inputHash->{sourceFilePath} ||= $file_path;
-    $inputHash->{outputFormat}   ||= 'static';
+    $inputHash->{outputFormat}   ||=  $ENV{DEFAULT_OUTPUT_FORMAT} ||= 'simple';
     $inputHash->{language}       ||= 'en';
 
     # HACK: required for problemRandomize.pl
