@@ -84,6 +84,7 @@ sub url {
 }
 
 sub formatRenderedProblem {
+	print STDERR "\nFORMAT_RENDERED_PROBLEM\n";
 	my $self 			  = shift;
 	my $problemText       ='';
 	my $rh_result         = $self->return_object() || {};  # wrap problem in formats
@@ -102,9 +103,11 @@ sub formatRenderedProblem {
 	my $answerOrder           = $rh_result->{flags}->{ANSWER_ENTRY_ORDER}; #[sort keys %{ $rh_result->{answers} }];
 	my $encoded_source        = $self->encoded_source//'';
 	my $sourceFilePath        = $self->{sourceFilePath}//'';
+	my $problemSeed  	  = $self->{problemSeed} ;
 	my $problemSourceURL      = $self->{inputs_ref}->{problemSourceURL};
-	my $problemSeed        = $self->{problemSeed} ;
 	my $warnings              = '';
+	print STDERR "\nPROBLEM_TXT $problemText \n";
+	$problemText .= "\<div> debug: seed = $problemSeed </div>  \n";
 	print "\n return_object answers ",
 		join( " ", %{ $rh_result->{PG_ANSWERS_HASH} } )
 		if $UNIT_TESTS_ON;

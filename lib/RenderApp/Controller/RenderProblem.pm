@@ -289,6 +289,7 @@ sub process_problem {
       return_object   => $return_object,
       encoded_source  => '', #encode_base64($source),
       sourceFilePath  => $file_path,
+      problemSeed     => $inputs_ref->{problemSeed},
       url             => $inputs_ref->{baseURL},
       form_action_url => $inputs_ref->{formURL},
       maketext        => sub {return @_},
