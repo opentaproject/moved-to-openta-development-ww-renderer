@@ -169,7 +169,7 @@ sub process_problem {
     #	$inputs_ref->{showResourceInfo}	= 1; #$print_resource_hash;
 
     ### stash inputs that get wiped by PG
-    my $problem_seed = $inputs_ref->{problemSeed};
+    my $problem_seed = $inputs_ref->{problemSeed} || '';
     die "problem seed not defined in Controller::RenderProblem::process_problem"
       unless $problem_seed;
     my $display_mode = $inputs_ref->{displayMode};

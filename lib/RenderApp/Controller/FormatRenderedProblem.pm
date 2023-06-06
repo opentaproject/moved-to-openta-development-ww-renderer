@@ -103,6 +103,7 @@ sub formatRenderedProblem {
 	my $encoded_source        = $self->encoded_source//'';
 	my $sourceFilePath        = $self->{sourceFilePath}//'';
 	my $problemSourceURL      = $self->{inputs_ref}->{problemSourceURL};
+	my $problemSeed        = $self->{problemSeed} ;
 	my $warnings              = '';
 	print "\n return_object answers ",
 		join( " ", %{ $rh_result->{PG_ANSWERS_HASH} } )
