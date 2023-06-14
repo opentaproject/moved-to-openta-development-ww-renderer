@@ -13,16 +13,24 @@ This is a PG Renderer derived from the WeBWorK2 codebase
 mkdir volumes
 mkdir container
 git clone https://github.com/openwebwork/webwork-open-problem-library volumes/webwork-open-problem-library
-git clone --recursive https://github.com/drdrew42/renderer container/
-docker build --tag renderer:1.0 ./container
+# git clone --recursive https://github.com/drdrew42/renderer container/
+git clone --branch latest --recursive https://github.com/opentaproject/ww-renderer container/
 
-docker run -d \
-  --rm \
-  --name standalone-renderer \
-  --publish 3000:3000 \
-  --mount type=bind,source="$(pwd)"/volumes/webwork-open-problem-library/,target=/usr/app/webwork-open-problem-library \
-  --env MOJO_MODE=development \
-  renderer:1.0
+docker build --tag ww-renderer-openta:base .
+docker run -d --rm --name standalone-renderer --publish 3000:3000 --mount type=bind,source="$(PWD)"/volumes/webwork-open-problem-library/,target=/usr/app/webwork-open-problem-library --env MOJO_MODE=development  ww-renderer-openta:v1480 
+docker tag ww-renderer-openta:1480d opentaproject/ww-renderer-openta:base
+docker push  opentaproject/ww-renderer-openta:base
+#docker run -d --rm --name standalone-renderer --publish 3000:3000 -p 2022:22 --mount type=bind,source=/Users/ostlund/subdomain-data,target=/subdomain-data --env MOJO_MODE=development  opentaproject/ww-renderer-openta:v1480
+
+docker run -d --rm --name standalone-renderer --publish 3000:3000  --mount type=bind,source=/subdomain-data,target=/subdomain-data --env MOJO_MODE=development  opentaproject/ww-renderer-openta:v1480
+
+#docker run -d \
+#  --rm \
+#  --name standalone-renderer \
+#  --publish 3000:3000 \
+#  --mount type=bind,source="$(pwd)"/volumes/webwork-open-problem-library/,target=/usr/app/webwork-open-problem-library \
+#  --env MOJO_MODE=development \
+#  renderer:1.0
 ```
 
 If you have non-OPL content, it can be mounted as a volume at `/usr/app/private` by adding the following line to the `docker run` command:

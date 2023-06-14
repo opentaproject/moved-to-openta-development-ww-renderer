@@ -285,8 +285,18 @@ sub process_problem {
     # PG/macros/PG.pl wipes out problemSeed -- put it back!
     # $inputs_ref->{problemSeed} = $problem_seed; # NO DONT
     $inputs_ref->{displayMode} = $display_mode;
+  my $my_decoded_identifier =  decode_base64( $identifier );
+  my @spl = split(/:/,$my_decoded_identifier);
+  my $protocol = $spl[0];
+  my $subdomain = $spl[1];
+  my $server_host = $spl[2];
+  my $port = $spl[3];
+  my $exercise_key  = $spl[6];
+  my $formURL = $protocol."://".$subdomain.".".$server_host.":".$port."/webwork_forward/render-api";
 
- 	# my $encoded_source = encode_base64($source); # create encoding of source_file;
+
+
+    # my $encoded_source = encode_base64($source); # create encoding of source_file;
     my $formatter = RenderApp::Controller::FormatRenderedProblem->new(
       return_object   => $return_object,
       encoded_source  => '', #encode_base64($source),
@@ -294,7 +304,7 @@ sub process_problem {
       problemSeed     => $inputs_ref->{problemSeed},
       identifier      => $inputs_ref->{identifier},
       url             => $inputs_ref->{baseURL},
-      form_action_url => $inputs_ref->{formURL},
+      form_action_url => $formURL,
       maketext        => sub {return @_},
       courseID        => 'blackbox',
       userID          => 'Motoko_Kusanagi',
@@ -360,6 +370,24 @@ sub standaloneRenderer {
 
     print "NOT PROCESSING ANSWERS" unless $processAnswers == 1;
 
+    my $my_decoded_identifier =  decode_base64( $identifier );
+    #print STDERR "IDENTIFIER = $my_decoded_identifier\n";
+    my @spl = split(/:/,$my_decoded_identifier);
+    ## http:canary:localhost:8000:885f5d7c-ba2b-476a-a403-7179d5edad17:1:916e0e37-806c-4f2e-bae3-6965cd275619:1:4153
+    # f"{http}:{subdomain}:{server}:{port}:{course.course_key}:{user.pk}:{exercise.exercise_key}:{question.question_key}:{exercise_seed}" 
+
+    my $protocol = $spl[0];
+    my $subdomain = $spl[1];
+    my $server_host = $spl[2];
+    my $port = $spl[3];
+    my $exercise_key  = $spl[6];
+    my $prefix = $protocol."://".$subdomain.".".$server_host.":".$port."/exercise/".$exercise_key."/asset/";
+    #my $prefix_check = "http://canary.localhost:8000/exercise/".$exercise_key."/asset/";
+    #my $prefix = "https://canary.opentaproject.org:443/exercise/9cdb158e-23af-4d83-a4a7-786829381769/asset/";
+    open( LOG , ">> /tmp/log.txt" );
+    print LOG "PREFIX = $prefix\n";
+    close( LOG );
+
     my $translationOptions = {
         displayMode     => $displayMode,
         showHints       => $showHints,
@@ -368,7 +396,7 @@ sub standaloneRenderer {
         processAnswers  => $processAnswers,
         QUIZ_PREFIX     => '',
 
-        #use_site_prefix 	=> 'http://localhost:3000',
+        use_site_prefix 	=> $prefix,
         use_opaque_prefix        => 0,
         permissionLevel          => $permission_level,
         effectivePermissionLevel => $permission_level

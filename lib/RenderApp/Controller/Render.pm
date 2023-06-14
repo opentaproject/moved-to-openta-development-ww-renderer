@@ -8,7 +8,7 @@ use WeBWorK::Form;
 
 sub parseRequest {
   my $c = shift;
-  print STDERR "\nPARSE_REQUEST\n ";
+  #print STDERR "\nPARSE_REQUEST\n ";
   #print  Dumper( $c ) ;
   #print STDERR "\nDONE DUMPER";
   my %params = WeBWorK::Form->new_from_paramable($c->req)->Vars;

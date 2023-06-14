@@ -201,14 +201,16 @@ sub load {
     my $self      = shift;
     my $success   = 0;
     my $read_path = $self->{read_path};
-    if ( -r $read_path ) {
-        $self->{problem_contents} = Encode::decode( "UTF-8", $read_path->slurp );
-        $success = 1;
-    }
-    else {
-        $self->{_error} =
-          "404 Problem set with un-read-able read_path: $read_path";
-    }
+    $self->{problem_contents} = Encode::decode( "UTF-8", $read_path->slurp );
+    $success = 1;
+    #if ( -r $read_path ) {
+    #    $self->{problem_contents} = Encode::decode( "UTF-8", $read_path->slurp );
+    #    $success = 1;
+    #}
+    #else {
+    #    $self->{_error} =
+    #      "404 Problem set with un-read-able read_path: $read_path";
+    #}
     return $success;
 }
 

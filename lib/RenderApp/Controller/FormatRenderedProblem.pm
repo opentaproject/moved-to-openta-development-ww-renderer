@@ -51,6 +51,7 @@ sub format_hash_ref {
 
 sub new {
   my $invocant = shift;
+
   my $class = ref $invocant || $invocant;
 	$self = { # Is this function redundant given the declarations within sub formatRenderedProblem?
 		return_object => {},
@@ -90,7 +91,6 @@ sub url {
 }
 
 sub formatRenderedProblem {
-	print STDERR "\nFORMAT_RENDERED_PROBLEM\n";
 	my $self 			  = shift;
 	my $problemText       ='';
 	my $rh_result         = $self->return_object() || {};  # wrap problem in formats
@@ -115,7 +115,9 @@ sub formatRenderedProblem {
 	my $warnings              = '';
 	my $studentAssetPath    = $self->{studentAssetPath};
 	my $score = $rh_result->{problem_result}->{score};
-	#my $decoded_identifier =  decode_base64( $identifier );
+	my $decoded_identifier =  decode_base64( $identifier );
+	
+	
 	####  MAKE SURE SEED PASSED IS THE SAME AS PASSED BY BACKEND
 	#my @sp = split(/:/,$decoded_identifier);
 	#my $seed_check = $sp[-1];
@@ -144,8 +146,23 @@ sub formatRenderedProblem {
 		#push( @openta_result ,  %ndata );
 	}
 	my $json_string = JSON->new->canonical(1)->encode( \@openta_result);
-	print "\nJSON_STRING = $json_string \n";
-	my $url = 'http://canary.localhost:8000/webwork/'.$identifier;
+	#print "\nJSON_STRING = $json_string \n";
+	#
+	my @spl = split(/:/,$decoded_identifier);
+        my $protocol = $spl[0];
+        my $subdomain = $spl[1];
+    	my $server_host = $spl[2];
+        my $port = $spl[3];
+        my $exercise_key  = $spl[6];
+	#my $prefix = $protocol."://".$subdomain.".".$server_host.":".$port."/exercise/".$exercise_key."/asset/";
+	my $url_check = 'http://conary.localhost:8000/webwork_save_result/'.$identifier;
+	my $url = $protocol."://".$subdomain.".".$server_host.":".$port."/webwork_save_result/".$identifier;
+	print STDERR "  url=$url";
+	open( LOG , ">> /tmp/log.txt" );
+	print LOG "URL = $url\n";
+	print LOG "CHECK = $url_check\n";
+	close( LOG );
+	#print STDERR "check=$url_check\n";
 	my $header = ['Content-Type' => 'application/json; charset=UTF-8'];
 	my $encoded_data = $json_string;
 	my $r = HTTP::Request->new('POST', $url  , $header, $encoded_data);
@@ -356,15 +373,13 @@ sub formatRenderedProblem {
 	my $template = do("WebworkClient/${format_name}_format.pl")//'';
 	die "Unknown format name $format_name" unless $template;
 	# interpolate values into template
-	my $studentAssetFile = $studentAssetPath."/index\.html";
-	print "STUDENT_ASSET_FILE  = $studentAssetFile \n" ;
+	my $index_html = 'index.html';
 	$template =~ s/(\$\w+)/"defined $1 ? $1 : ''"/gee;
 	@created = make_path( $studentAssetPath,  { chmod => 0777, });
-	my $studentAssetFile = $studentAssetPath + "/" + "index.html";
-	open(FH, '>', '/tmp/index.html' ) or die $!; # THIS DID NOT WORK BY WRITING DIRECTLY INTO FILE
+	open(FH, '>', '/tmp/'.$index_html ) or die $!; # THIS DID NOT WORK BY WRITING DIRECTLY INTO FILE
 	print FH $template;
 	close( FH );
-	move( '/tmp/index.html', $studentAssetPath );
+	move( '/tmp/'.$index_html, $studentAssetPath );
 	return $template;
 }
 
