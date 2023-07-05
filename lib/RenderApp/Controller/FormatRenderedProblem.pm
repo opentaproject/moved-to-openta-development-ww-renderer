@@ -116,7 +116,10 @@ sub formatRenderedProblem {
 	my $studentAssetPath    = $self->{studentAssetPath};
 	my $score = $rh_result->{problem_result}->{score};
 	my $decoded_identifier =  decode_base64( $identifier );
-	
+
+	#print "RH_RESULT\n";
+	#print Dumper($rh_result);
+	#print "RH_RESULT_END\n";
 	
 	####  MAKE SURE SEED PASSED IS THE SAME AS PASSED BY BACKEND
 	#my @sp = split(/:/,$decoded_identifier);
@@ -134,10 +137,15 @@ sub formatRenderedProblem {
 		#print "CORRECT = $rh_answers->{$key}->{score} \n";
 		#print "MSG = $rh_answers->{$key}->{ans_message} \n";
 		#print "SEED = $problemSeed \n";
+		#print "RHANSWERES";
+		#print Dumper( $rh_answers->{$key} );
 		my $ans =  $rh_answers->{$key}->{original_student_ans} ;
 		my $correct =  $rh_answers->{$key}->{score};
 		my $msg =  $rh_answers->{$key}->{ans_message};
 		my $seed = $problemSeed;
+		if ( $rh_answers->{$key}->{correct_ans} eq 'Undefined' ) {
+			$correct = 'Undefined';
+			}
 		my %ndata = ('key' =>  $key , 'ans' =>  $ans, 'correct' =>  $correct, 'message'  =>  $msg, 'seed' => $seed ,'submitted' => $submitted ,'score' => $score );
 		#print "\nDATA = \n";
 		#print Dumper(%ndata);
